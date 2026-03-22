@@ -19,11 +19,11 @@ const userSchema = new Schema({
     type: String,
     enum: ["user", "admin"],
     default: "user"
-  },
-  profilePic: {
-    type: String,
-    default: ""
   }
+  // profilePic: {
+  //   type: String,
+  //   default: ""
+  // }
 });
 
 module.exports = mongoose.model("users", userSchema);
