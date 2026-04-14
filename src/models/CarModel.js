@@ -2,6 +2,11 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const carSchema = new Schema({
+    user: {
+        type: Schema.Types.ObjectId,
+        ref: "user",
+        required: true
+    },
     name: {
         type: String,
         required: true
@@ -14,18 +19,8 @@ const carSchema = new Schema({
         type: Number,
         required: true
     },
-    fuelType: String,
-    transmission: String,
-    mileage: Number,
-    engine: String,
-
-    // 🖼️ Image support
     image: {
-        type: String,
-        default: ""
+        type: String
     }
-
-}, {
-    timestamps: true
-});
+}, { timestamps: true });
 module.exports = mongoose.model("car", carSchema);

@@ -1,6 +1,6 @@
 const Notification = require("../models/NotificationModel")
 
-// 🔥 Add Notification
+
 const addNotification = async (req, res) => {
   try {
     const { title, message } = req.body
@@ -24,7 +24,7 @@ const addNotification = async (req, res) => {
 }
 
 
-// 🔥 Get All Notifications
+
 const getNotifications = async (req, res) => {
   try {
     const notifications = await Notification.find().sort({ date: -1 })
@@ -43,7 +43,6 @@ const getNotifications = async (req, res) => {
 }
 
 
-// 🔥 Delete Notification
 const deleteNotification = async (req, res) => {
   try {
     await Notification.findByIdAndDelete(req.params.id)

@@ -2,23 +2,18 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const accessorySchema = new Schema({
-    car: {
-    type: mongoose.Schema.Types.ObjectId,
+  car: {
+    type: Schema.Types.ObjectId,
     ref: "car",
     required: true
   },
   name: {
     type: String,
-    required: true,
-    trim: true
+    required: true
   },
   price: {
     type: Number,
     required: true
-  },
-  description: {
-    type: String,
-    trim: true
   }
 }, { timestamps: true });
 
