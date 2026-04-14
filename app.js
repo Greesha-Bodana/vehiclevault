@@ -15,6 +15,13 @@ app.use("/car",carRoutes)
 const comparisonRoutes =require("./src/routes/ComparisonRoutes")
 app.use("/comparison",comparisonRoutes)
 
+const accessoryRoutes= require("./src/routes/AccessoryRoutes")
+app.use("/accessory",accessoryRoutes)
+
+const notificationRoutes = require("./src/routes/NotificationRoutes")
+app.use("/notification", notificationRoutes)
+
+
 const PORT = process.env.PORT
 app.listen(PORT, () => {
     console.log(`server started on port ${PORT}`)

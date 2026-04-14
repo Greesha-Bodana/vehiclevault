@@ -11,11 +11,7 @@ const comparisonSchema = new Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "car",
         required: true
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
     }
-})
+}, { timestamps: true });
 
 module.exports = mongoose.model("comparison", comparisonSchema);

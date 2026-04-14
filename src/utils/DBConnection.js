@@ -4,7 +4,7 @@ require("dotenv").config()
 const DBConnection = () => {
     mongoose.connect(process.env.Mongo_URL).then(()=>{
     console.log("DB Connected")
-    }).catch((e)=>{
+     }).catch((e)=>{
         console.log(e)
     })
 }

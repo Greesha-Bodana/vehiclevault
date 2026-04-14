@@ -14,21 +14,18 @@ const carSchema = new Schema({
         type: Number,
         required: true
     },
-    fuelType: {
-        type: String
-    },
-    transmission: {
-        type: String
-    },
-    mileage: {
-        type: Number
-    },
-    engine: {
-        type: String
-    },
-    // image: {
-    //     type: String
-    // }
+    fuelType: String,
+    transmission: String,
+    mileage: Number,
+    engine: String,
 
-})
+    // 🖼️ Image support
+    image: {
+        type: String,
+        default: ""
+    }
+
+}, {
+    timestamps: true
+});
 module.exports = mongoose.model("car", carSchema);

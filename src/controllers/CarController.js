@@ -1,79 +1,37 @@
-const carSchema = require("../models/CarModel")
+const Car = require("../models/CarModel");
 
+// CREATE
 const addCar = async (req, res) => {
     try {
-        const car = await carSchema.create(req.body)
-        res.status(201).json({
-            message: "Car added successfully",
-            car: car
-        })
+        const car = await Car.create(req.body);
+        res.status(201).json({ message: "Car added", data: car });
     } catch (err) {
-        res.status(500).json({
-            message: "error while adding car",
-            err: err
-        })
+        res.status(500).json({ message: "Error", err });
     }
-}
+};
 
+// READ ALL
 const getCars = async (req, res) => {
-    try {
-        const cars = await carSchema.find()
-        res.status(200).json(cars)
-    } catch (err) {
-        res.status(500).json({
-            message: "error while fetching cars",
-            err: err
-        })
-    }
-}
+    const cars = await Car.find();
+    res.status(200).json(cars);
+};
 
+// READ ONE
 const getCarById = async (req, res) => {
-    try {
-        const car = await carSchema.findById(req.params.id)
+    const car = await Car.findById(req.params.id);
+    res.status(200).json(car);
+};
 
-        res.status(200).json(car)
-    } catch (err) {
-        res.status(500).json({
-            message: "error while fetching car",
-            err: err
-        })
-    }
-}
-
-
+// UPDATE
 const updateCar = async (req, res) => {
-    try {
-        const car = await carSchema.findByIdAndUpdate(req.params.id, req.body, { new: true })
-        res.status(200).json({
-            message: "Car updated",
-            car: car
-        })
-    } catch (err) {
-        res.status(500).json({
-            message: "error while updating car",
-            err: err
-        })
-    }
-}
+    const car = await Car.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.status(200).json({ message: "Updated", data: car });
+};
 
+// DELETE
 const deleteCar = async (req, res) => {
-    try {
-        await carSchema.findByIdAndDelete(req.params.id)
-        res.status(200).json({
-            message: "Car deleted"
-        })
-    } catch (err) {
-        res.status(500).json({
-            message: "error while deleting car",
-            err: err
-        })
-    }
-}
+    await Car.findByIdAndDelete(req.params.id);
+    res.status(200).json({ message: "Deleted" });
+};
 
-module.exports = {
-    addCar,
-    getCars,
-    getCarById,
-    updateCar,
-    deleteCar
-}
+module.exports = { addCar, getCars, getCarById, updateCar, deleteCar };

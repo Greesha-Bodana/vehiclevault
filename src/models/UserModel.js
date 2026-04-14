@@ -20,10 +20,6 @@ const userSchema = new Schema({
     enum: ["user", "admin"],
     default: "user"
   }
-  // profilePic: {
-  //   type: String,
-  //   default: ""
-  // }
-});
+}, { timestamps: true });
 
-module.exports = mongoose.model("users", userSchema);
+module.exports = mongoose.model("user", userSchema);
