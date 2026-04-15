@@ -21,8 +21,8 @@ app.use("/accessory",accessoryRoutes)
 const notificationRoutes = require("./src/routes/NotificationRoutes")
 app.use("/notification", notificationRoutes)
 
-const wishlistRoutes =  require("./src/routes/WishlistRoutes")
-app.use("/wishlist",wishlistRoutes)
+const wishlistRoutes = require("./src/routes/WishlistRoutes");
+app.use("/wishlist", wishlistRoutes)
 
 const PORT = process.env.PORT
 app.listen(PORT, () => {
