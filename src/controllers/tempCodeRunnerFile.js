@@ -17,12 +17,14 @@ const addAccessory = async (req, res) => {
   }
 }
 
+
+
 const getAccessories = async (req, res) => {
   try {
     const accessories = await Accessory.find().populate("car")
 
     res.status(200).json({
-      message: "Accessories fetched", 
+      message: "Accessories fetched",
       data: accessories
     })
 
