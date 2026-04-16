@@ -1,7 +1,25 @@
 const Accessory = require("../models/AccessoryModel")
+const Car = require("../models/CarModel")
+
+const canManageCar = (requestUser, carOwnerId) =>
+  requestUser.role === "admin" || carOwnerId.toString() === requestUser.id
 
 const addAccessory = async (req, res) => {
   try {
+    const car = await Car.findById(req.body.car)
+
+    if (!car) {
+      return res.status(404).json({
+        message: "Car not found"
+      })
+    }
+
+    if (!canManageCar(req.user, car.user)) {
+      return res.status(403).json({
+        message: "You are not allowed to add accessories to this car"
+      })
+    }
+
     const accessory = await Accessory.create(req.body)
 
     res.status(201).json({
@@ -37,6 +55,14 @@ const getAccessories = async (req, res) => {
 
 const getAccessoriesByCar = async (req, res) => {
   try {
+    const car = await Car.findById(req.params.carId)
+
+    if (!car) {
+      return res.status(404).json({
+        message: "Car not found"
+      })
+    }
+
     const accessories = await Accessory.find({
       car: req.params.carId
     })
@@ -54,8 +80,56 @@ const getAccessoriesByCar = async (req, res) => {
   }
 }
 
+const updateAccessory = async (req, res) => {
+  try {
+    const existingAccessory = await Accessory.findById(req.params.id).populate("car")
+
+    if (!existingAccessory) {
+      return res.status(404).json({
+        message: "Accessory not found"
+      })
+    }
+
+    if (!canManageCar(req.user, existingAccessory.car.user)) {
+      return res.status(403).json({
+        message: "You are not allowed to update this accessory"
+      })
+    }
+
+    const accessory = await Accessory.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    )
+
+    res.status(200).json({
+      message: "Accessory updated successfully",
+      data: accessory
+    })
+  } catch (err) {
+    res.status(500).json({
+      message: "Error updating accessory",
+      err
+    })
+  }
+}
+
 const deleteAccessory = async (req, res) => {
   try {
+    const accessory = await Accessory.findById(req.params.id).populate("car")
+
+    if (!accessory) {
+      return res.status(404).json({
+        message: "Accessory not found"
+      })
+    }
+
+    if (!canManageCar(req.user, accessory.car.user)) {
+      return res.status(403).json({
+        message: "You are not allowed to delete this accessory"
+      })
+    }
+
     await Accessory.findByIdAndDelete(req.params.id)
 
     res.status(200).json({
@@ -74,5 +148,6 @@ module.exports = {
   addAccessory,
   getAccessories,
   getAccessoriesByCar,
+  updateAccessory,
   deleteAccessory
 }

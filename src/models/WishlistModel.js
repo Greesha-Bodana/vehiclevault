@@ -17,4 +17,6 @@ const wishlistSchema = new Schema(
   { timestamps: true }
 );
 
+wishlistSchema.index({ user: 1, car: 1 }, { unique: true });
+
 module.exports = mongoose.model("wishlist", wishlistSchema);

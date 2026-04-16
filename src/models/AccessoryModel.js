@@ -9,12 +9,32 @@ const accessorySchema = new Schema({
   },
   name: {
     type: String,
-    required: true
+    required: true,
+    trim: true
+  },
+  category: {
+    type: String,
+    trim: true
+  },
+  description: {
+    type: String,
+    trim: true
   },
   price: {
     type: Number,
-    required: true
+    required: true,
+    min: 0
+  },
+  image: {
+    type: String,
+    trim: true
+  },
+  inStock: {
+    type: Boolean,
+    default: true
   }
 }, { timestamps: true });
+
+accessorySchema.index({ car: 1 });
 
 module.exports = mongoose.model("accessory", accessorySchema);

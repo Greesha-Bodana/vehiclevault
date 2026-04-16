@@ -4,30 +4,37 @@ const Schema = mongoose.Schema;
 const carSchema = new Schema({
     user: {
         type: Schema.Types.ObjectId,
-        ref: "user"
+        ref: "user",
+        required: true
     },
     name: {
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
     brand: {
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
     model: {
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
     year: {
         type: Number,
-        required: true
+        required: true,
+        min: 1900
     },
     price: {
         type: Number,
-        required: true
+        required: true,
+        min: 0
     },
     mileage: {
-        type: Number
+        type: Number,
+        min: 0
     },
     fuelType: {
         type: String,
@@ -43,19 +50,24 @@ const carSchema = new Schema({
         default: "Used"
     },
     color: {
-        type: String
+        type: String,
+        trim: true
     },
     bodyType: {
-        type: String
+        type: String,
+        trim: true
     },
     location: {
-        type: String
+        type: String,
+        trim: true
     },
     description: {
-        type: String
+        type: String,
+        trim: true
     },
     image: {
-        type: String
+        type: String,
+        trim: true
     },
     features: [String],
     isAvailable: {
@@ -63,4 +75,10 @@ const carSchema = new Schema({
         default: true
     }
 }, { timestamps: true });
+
+carSchema.index({ brand: 1, model: 1 });
+carSchema.index({ price: 1 });
+carSchema.index({ year: -1 });
+carSchema.index({ user: 1 });
+
 module.exports = mongoose.model("car", carSchema);
