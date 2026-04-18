@@ -1,12 +1,14 @@
 const userSchema = require("../models/UserModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const crypto = require("crypto");
-const { sendEmail } = require("../utils/MailConfig");
+const mailSend = require("../utils/MailUtil");
+
+const JWT_SECRET = process.env.JWT_SECRET || "secret";
+const RESET_LINK_BASE = process.env.FRONTEND_URL || "http://localhost:5173";
 
 const sanitizeUser = (user) => {
     const userObject = user.toObject ? user.toObject() : user;
-    const { password, ...userData } = userObject;
+    const { password, resetPasswordToken, resetPasswordExpire, ...userData } = userObject;
     return userData;
 };
 
@@ -43,13 +45,14 @@ const registerUser = async (req, res) => {
 
         res.status(201).json({
             message: "User created successfully",
-            user: sanitizeUser(saveUser)
+            data: sanitizeUser(saveUser)
         });
 
         sendEmail({
             to: saveUser.email,
             subject: "Welcome to VehicleVault",
-            text: `Hi ${saveUser.name}, your VehicleVault account has been created successfully.`
+            text: `Hi ${saveUser.name}, your VehicleVault account has been created successfully.`,
+            html: `<p>Hi ${saveUser.name},</p><p>Your VehicleVault account has been created successfully.</p>`
         }).catch((emailError) => {
             console.log("Welcome email skipped:", emailError.message);
         });
@@ -69,32 +72,33 @@ const loginUser = async (req, res) => {
             return res.status(400).json({ message: "Email and password are required" });
         }
 
-        const user = await userSchema.findOne({ email: email.toLowerCase().trim() });
+        const foundUserFromEmail = await userSchema.findOne({ email: email.toLowerCase().trim() });
 
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
+        if (!foundUserFromEmail) {
+            return res.status(404).json({ message: "User not found." });
         }
 
-        const isMatch = await bcrypt.compare(password, user.password);
+        const isPasswordMatched = await bcrypt.compare(password, foundUserFromEmail.password);
 
-        if (!isMatch) {
-            return res.status(400).json({ message: "Invalid password" });
+        if (!isPasswordMatched) {
+            return res.status(401).json({ message: "Invalid Credentials" });
         }
 
         const token = jwt.sign(
-            { id: user._id, role: user.role },
-            process.env.JWT_SECRET,
-            { expiresIn: "1d" }
+            { _id: foundUserFromEmail._id, role: foundUserFromEmail.role },
+            JWT_SECRET,
+            { expiresIn: "7d" }
         );
 
         res.status(200).json({
-            message: "Login successful",
+            message: "Login Success",
             token,
-            user: sanitizeUser(user)
+            role: foundUserFromEmail.role,
+            data: sanitizeUser(foundUserFromEmail)
         });
     } catch (err) {
         res.status(500).json({
-            message: "Error while login",
+            message: "Error while logging in",
             error: err.message
         });
     }
@@ -105,36 +109,41 @@ const forgotPassword = async (req, res) => {
         const { email } = req.body;
 
         if (!email) {
-            return res.status(400).json({ message: "Email is required" });
+            return res.status(400).json({
+                message: "Email is required."
+            });
         }
 
-        const user = await userSchema.findOne({ email: email.toLowerCase().trim() });
+        const foundUserFromEmail = await userSchema.findOne({ email: email.toLowerCase().trim() });
 
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
+        if (!foundUserFromEmail) {
+            return res.status(404).json({
+                message: "User not found."
+            });
         }
 
-        const resetToken = crypto.randomBytes(32).toString("hex");
-        const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+        const token = jwt.sign(
+            { _id: foundUserFromEmail._id, email: foundUserFromEmail.email },
+            JWT_SECRET,
+            { expiresIn: "1h" }
+        );
 
-        user.resetPasswordToken = hashedToken;
-        user.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
-        await user.save();
-
-        const resetUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/reset-password/${resetToken}`;
+        const url = `${RESET_LINK_BASE}/reset-password/${token}`;
+        const mailtext = `<html><p>Click the link below to reset your password:</p><a href="${url}">${url}</a></html>`;
 
         await sendEmail({
-            to: user.email,
-            subject: "VehicleVault Password Reset",
-            text: `Reset your password using this link: ${resetUrl}`
+            to: foundUserFromEmail.email,
+            subject: "Reset Password Link",
+            text: `Reset your password using this link: ${url}`,
+            html: mailtext
         });
 
         res.status(200).json({
-            message: "Password reset link sent successfully"
+            message: "Reset link has been sent to your email"
         });
     } catch (err) {
         res.status(500).json({
-            message: "Error sending reset email",
+            message: "Error while sending reset link",
             error: err.message
         });
     }
@@ -142,38 +151,28 @@ const forgotPassword = async (req, res) => {
 
 const resetPassword = async (req, res) => {
     try {
-        const { password } = req.body;
+        const { newPassword } = req.body;
+        const token = req.params.token;
 
-        if (!password) {
-            return res.status(400).json({ message: "New password is required" });
+        if (!newPassword) {
+            return res.status(400).json({
+                message: "New password is required."
+            });
         }
 
-        const hashedToken = crypto
-            .createHash("sha256")
-            .update(req.params.token)
-            .digest("hex");
+        const decodedUser = jwt.verify(token, JWT_SECRET);
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        const user = await userSchema.findOne({
-            resetPasswordToken: hashedToken,
-            resetPasswordExpire: { $gt: Date.now() }
-        });
-
-        if (!user) {
-            return res.status(400).json({ message: "Reset token is invalid or expired" });
-        }
-
-        user.password = await bcrypt.hash(password, 10);
-        user.resetPasswordToken = undefined;
-        user.resetPasswordExpire = undefined;
-        await user.save();
+        await userSchema.findByIdAndUpdate(decodedUser._id, { password: hashedPassword });
 
         res.status(200).json({
-            message: "Password reset successfully"
+            message: "Password reset successfully !!"
         });
     } catch (err) {
+        console.log(err);
         res.status(500).json({
-            message: "Error resetting password",
-            error: err.message
+            message: "Server error..",
+            err: err.message
         });
     }
 };

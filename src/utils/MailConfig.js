@@ -1,18 +1,25 @@
 const nodemailer = require("nodemailer");
 
-const getTransporter = () =>
-    nodemailer.createTransport({
+const getTransporter = () => {
+    const emailUser = process.env.SMTP_EMAIL || process.env.EMAIL_USER;
+    const emailPass = process.env.SMTP_PASSWORD || process.env.EMAIL_PASSWORD;
+
+    return nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: Number(process.env.SMTP_PORT || 587),
         secure: process.env.SMTP_SECURE === "true",
         auth: {
-            user: process.env.SMTP_EMAIL,
-            pass: process.env.SMTP_PASSWORD
+            user: emailUser,
+            pass: emailPass
         }
     });
+};
 
 const sendEmail = async ({ to, subject, text, html }) => {
-    if (!process.env.SMTP_HOST || !process.env.SMTP_EMAIL || !process.env.SMTP_PASSWORD) {
+    const emailUser = process.env.SMTP_EMAIL || process.env.EMAIL_USER;
+    const emailPass = process.env.SMTP_PASSWORD || process.env.EMAIL_PASSWORD;
+
+    if (!process.env.SMTP_HOST || !emailUser || !emailPass) {
         return {
             skipped: true,
             message: "SMTP credentials are not configured"
@@ -22,7 +29,7 @@ const sendEmail = async ({ to, subject, text, html }) => {
     const transporter = getTransporter();
 
     await transporter.sendMail({
-        from: process.env.SMTP_FROM || process.env.SMTP_EMAIL,
+        from: process.env.SMTP_FROM || process.env.EMAIL_FROM || emailUser,
         to,
         subject,
         text,

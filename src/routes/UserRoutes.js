@@ -2,6 +2,7 @@ const router = require("express").Router()
 const userController = require("../controllers/UserController")
 const auth = require("../middleware/AuthMiddleware")
 
+router.post("/signup", userController.registerUser)
 router.post("/register", userController.registerUser)
 router.post("/login", userController.loginUser)
 router.post("/forgot-password", userController.forgotPassword)
