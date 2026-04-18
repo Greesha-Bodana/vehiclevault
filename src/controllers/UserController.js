@@ -26,6 +26,7 @@ const registerUser = async (req, res) => {
         }
 
         const normalizedEmail = email.toLowerCase().trim();
+        const normalizedRole = role?.toString().trim().toLowerCase();
         const existingUser = await userSchema.findOne({ email: normalizedEmail });
 
         if (existingUser) {
@@ -34,13 +35,14 @@ const registerUser = async (req, res) => {
             });
         }
 
+        const allowedRole = ["admin", "subadmin"].includes(normalizedRole) ? normalizedRole : "user";
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const saveUser = await userSchema.create({
             name: name.trim(),
             email: normalizedEmail,
             password: hashedPassword,
-            role: role === "admin" ? "admin" : "user"
+            role: allowedRole
         });
 
         res.status(201).json({
@@ -83,6 +85,10 @@ const loginUser = async (req, res) => {
         if (!isPasswordMatched) {
             return res.status(401).json({ message: "Invalid Credentials" });
         }
+
+        // Update last login time
+        foundUserFromEmail.lastLogin = new Date();
+        await foundUserFromEmail.save();
 
         const token = jwt.sign(
             { _id: foundUserFromEmail._id, role: foundUserFromEmail.role },
@@ -190,6 +196,27 @@ const getUsers = async (req, res) => {
     }
 };
 
+const getActiveUsers = async (req, res) => {
+    try {
+        if (req.user.role !== "admin") {
+            return res.status(403).json({ message: "Only admins can view active users" });
+        }
+
+        // Get users who logged in within the last 24 hours
+        const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const activeUsers = await userSchema.find({
+            lastLogin: { $gte: last24Hours }
+        }).select("-password").sort({ lastLogin: -1 });
+
+        res.status(200).json({
+            count: activeUsers.length,
+            users: activeUsers
+        });
+    } catch (err) {
+        res.status(500).json({ message: "Error fetching active users", error: err.message });
+    }
+};
+
 const getUserById = async (req, res) => {
     try {
         if (!canAccessUser(req.user, req.params.id)) {
@@ -288,6 +315,7 @@ module.exports = {
     forgotPassword,
     resetPassword,
     getUsers,
+    getActiveUsers,
     getUserById,
     updateUser,
     deleteUser

@@ -12,7 +12,15 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
 const DBConnection = require("./src/utils/DBConnection")
-DBConnection()
+const seedDefaultUsers = require("./src/utils/seedUsers")
+
+DBConnection().then((mongooseInstance) => {
+    if (mongooseInstance) {
+        seedDefaultUsers().catch((err) => {
+            console.error("Failed to seed default users:", err.message)
+        })
+    }
+})
 
 app.get("/", (req, res) => {
     res.status(200).json({
