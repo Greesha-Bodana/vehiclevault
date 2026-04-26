@@ -17,7 +17,7 @@ const canAccessUser = (requestUser, targetUserId) =>
 
 const registerUser = async (req, res) => {
     try {
-        const { name, email, password, role } = req.body;
+        const { name, email, password } = req.body;
 
         if (!name || !email || !password) {
             return res.status(400).json({
@@ -26,7 +26,6 @@ const registerUser = async (req, res) => {
         }
 
         const normalizedEmail = email.toLowerCase().trim();
-        const normalizedRole = role?.toString().trim().toLowerCase();
         const existingUser = await userSchema.findOne({ email: normalizedEmail });
 
         if (existingUser) {
@@ -35,14 +34,12 @@ const registerUser = async (req, res) => {
             });
         }
 
-        const allowedRole = ["admin", "subadmin"].includes(normalizedRole) ? normalizedRole : "user";
         const hashedPassword = await bcrypt.hash(password, 10);
-
         const saveUser = await userSchema.create({
             name: name.trim(),
             email: normalizedEmail,
             password: hashedPassword,
-            role: allowedRole
+            profileImage: req.body.profileImage ? req.body.profileImage.trim() : ""
         });
 
         res.status(201).json({
@@ -50,12 +47,12 @@ const registerUser = async (req, res) => {
             data: sanitizeUser(saveUser)
         });
 
-        sendEmail({
-            to: saveUser.email,
-            subject: "Welcome to VehicleVault",
-            text: `Hi ${saveUser.name}, your VehicleVault account has been created successfully.`,
-            html: `<p>Hi ${saveUser.name},</p><p>Your VehicleVault account has been created successfully.</p>`
-        }).catch((emailError) => {
+        mailSend(
+            saveUser.email,
+            "Welcome to VehicleVault",
+            `Hi ${saveUser.name}, your VehicleVault account has been created successfully.`,
+            `<p>Hi ${saveUser.name},</p><p>Your VehicleVault account has been created successfully.</p>`
+        ).catch((emailError) => {
             console.log("Welcome email skipped:", emailError.message);
         });
     } catch (err) {
@@ -91,7 +88,11 @@ const loginUser = async (req, res) => {
         await foundUserFromEmail.save();
 
         const token = jwt.sign(
-            { _id: foundUserFromEmail._id, role: foundUserFromEmail.role },
+            {
+                id: foundUserFromEmail._id.toString(),
+                _id: foundUserFromEmail._id.toString(),
+                role: foundUserFromEmail.role
+            },
             JWT_SECRET,
             { expiresIn: "7d" }
         );
@@ -137,12 +138,12 @@ const forgotPassword = async (req, res) => {
         const url = `${RESET_LINK_BASE}/reset-password/${token}`;
         const mailtext = `<html><p>Click the link below to reset your password:</p><a href="${url}">${url}</a></html>`;
 
-        await sendEmail({
-            to: foundUserFromEmail.email,
-            subject: "Reset Password Link",
-            text: `Reset your password using this link: ${url}`,
-            html: mailtext
-        });
+        await mailSend(
+            foundUserFromEmail.email,
+            "Reset Password Link",
+            `Reset your password using this link: ${url}`,
+            mailtext
+        );
 
         res.status(200).json({
             message: "Reset link has been sent to your email"

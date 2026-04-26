@@ -1,7 +1,7 @@
 const express = require("express")
 const cors = require("cors")
 const app = express()
-require("dotenv").config()
+require("dotenv").config({ override: true })
 
 if (!process.env.JWT_SECRET) {
     console.warn("JWT_SECRET is missing in .env. Login will not work without it.")
@@ -46,9 +46,6 @@ app.use("/notification", notificationRoutes)
 const wishlistRoutes = require("./src/routes/WishlistRoutes");
 app.use("/wishlist", wishlistRoutes)
 
-const uploadRoutes = require("./src/routes/UploadRoutes")
-app.use("/upload", uploadRoutes)
-
 const paymentRoutes = require("./src/routes/PaymentRoutes")
 app.use("/payment", paymentRoutes)
 
@@ -56,7 +53,7 @@ app.use((req, res) => {
     res.status(404).json({ message: "Route not found" })
 })
 
-const PORT = process.env.PORT || 5000
+const PORT = process.env.PORT || 3000
 app.listen(PORT, () => {
     console.log(`server started on port ${PORT}`)
 })

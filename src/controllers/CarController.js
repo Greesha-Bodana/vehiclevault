@@ -1,13 +1,48 @@
 const Car = require("../models/CarModel");
+const fs = require("fs/promises");
+const uploadToCloudinary = require("../utils/CloudinaryUtil");
 
 const canManageCar = (requestUser, carOwnerId) =>
-    requestUser.role === "admin" || carOwnerId.toString() === requestUser.id;
+    requestUser.role === "admin" || carOwnerId?.toString() === requestUser.id;
+
+const uploadCarImage = async (file) => {
+    const cloudinaryResponse = await uploadToCloudinary(file.path);
+
+    if (file.path) {
+        await fs.unlink(file.path).catch(() => {});
+    }
+
+    return cloudinaryResponse.secure_url || "";
+};
 
 const addCar = async (req, res) => {
     try {
+        const { name, brand, model, year, price, description, isAvailable } = req.body;
+
+        if (!name || !brand || !model || !year || price === undefined || price === null || price === "") {
+            return res.status(400).json({
+                message: "Name, brand, model, year and price are required"
+            });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({
+                message: "Car image is required"
+            });
+        }
+
+        const imageUrl = await uploadCarImage(req.file);
+
         const car = await Car.create({
-            ...req.body,
-            user: req.user.id
+            user: req.user.id,
+            name: name.trim(),
+            brand: brand.trim(),
+            model: model.trim(),
+            year: Number(year),
+            price: Number(price),
+            image: imageUrl,
+            description,
+            isAvailable: isAvailable === undefined ? true : isAvailable === true || isAvailable === "true"
         });
 
         res.status(201).json({
@@ -23,10 +58,6 @@ const getCars = async (req, res) => {
     try {
         const {
             brand,
-            fuelType,
-            transmission,
-            condition,
-            location,
             minPrice,
             maxPrice,
             search,
@@ -38,17 +69,12 @@ const getCars = async (req, res) => {
         const query = {};
 
         if (brand) query.brand = new RegExp(brand, "i");
-        if (fuelType) query.fuelType = fuelType;
-        if (transmission) query.transmission = transmission;
-        if (condition) query.condition = condition;
-        if (location) query.location = new RegExp(location, "i");
         if (isAvailable !== undefined) query.isAvailable = isAvailable === "true";
         if (search) {
             query.$or = [
                 { name: new RegExp(search, "i") },
                 { brand: new RegExp(search, "i") },
-                { model: new RegExp(search, "i") },
-                { bodyType: new RegExp(search, "i") }
+                { model: new RegExp(search, "i") }
             ];
         }
 
@@ -117,9 +143,27 @@ const updateCar = async (req, res) => {
             return res.status(403).json({ message: "You are not allowed to update this car" });
         }
 
+        const updates = { ...req.body };
+
+        if (updates.name !== undefined) updates.name = updates.name.trim();
+        if (updates.brand !== undefined) updates.brand = updates.brand.trim();
+        if (updates.model !== undefined) updates.model = updates.model.trim();
+        if (updates.year !== undefined && updates.year !== "") updates.year = Number(updates.year);
+        if (updates.price !== undefined && updates.price !== "") updates.price = Number(updates.price);
+        if (updates.description !== undefined) updates.description = updates.description.trim();
+        if (updates.isAvailable !== undefined) {
+            updates.isAvailable = updates.isAvailable === true || updates.isAvailable === "true";
+        }
+
+        if (req.file) {
+            updates.image = await uploadCarImage(req.file);
+        } else {
+            updates.image = existingCar.image;
+        }
+
         const car = await Car.findByIdAndUpdate(
             req.params.id,
-            req.body,
+            updates,
             { new: true, runValidators: true }
         );
 

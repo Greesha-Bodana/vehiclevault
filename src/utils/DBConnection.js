@@ -1,5 +1,5 @@
 const mongoose = require("mongoose")
-require("dotenv").config()
+require("dotenv").config({ override: true })
 
 const DBConnection = async () => {
     const mongoUri = process.env.MONGO_URL || process.env.Mongo_URL

@@ -1,9 +1,37 @@
 const Notification = require("../models/NotificationModel")
+const User = require("../models/UserModel")
 
 const addNotification = async (req, res) => {
   try {
-    const { title, message, user, type, link } = req.body
-    const targetUser = req.user.role === "admin" && user ? user : req.user.id
+    const { title, message, user, type = "general", link, broadcast = false } = req.body
+
+    if (!title || !message) {
+      return res.status(400).json({
+        message: "Title and message are required"
+      })
+    }
+
+    if (req.user.role === "admin" && (broadcast || !user)) {
+      const users = await User.find({}, "_id")
+      const recipients = users.length > 0 ? users : [{ _id: req.user.id }]
+      const docs = recipients.map((recipient) => ({
+        user: recipient._id,
+        type,
+        title,
+        message,
+        link
+      }))
+
+      const notifications = await Notification.insertMany(docs)
+
+      return res.status(201).json({
+        message: "Notification broadcast successfully",
+        count: notifications.length,
+        data: notifications
+      })
+    }
+
+    const targetUser = user || req.user.id
 
     const notification = await Notification.create({
       user: targetUser,
@@ -21,7 +49,7 @@ const addNotification = async (req, res) => {
   } catch (err) {
     res.status(500).json({
       message: "Error adding notification",
-      err
+      error: err.message
     })
   }
 }
@@ -30,8 +58,8 @@ const addNotification = async (req, res) => {
 
 const getNotifications = async (req, res) => {
   try {
-    const query = req.user.role === "admin" && req.query.user
-      ? { user: req.query.user }
+    const query = req.user.role === "admin"
+      ? (req.query.user ? { user: req.query.user } : {})
       : { user: req.user.id }
 
     const notifications = await Notification.find(query)
@@ -47,7 +75,7 @@ const getNotifications = async (req, res) => {
   } catch (err) {
     res.status(500).json({
       message: "Error fetching notifications",
-      err
+      error: err.message
     })
   }
 }
@@ -81,7 +109,7 @@ const markNotificationAsRead = async (req, res) => {
   } catch (err) {
     res.status(500).json({
       message: "Error updating notification",
-      err
+      error: err.message
     })
   }
 }
@@ -114,7 +142,7 @@ const deleteNotification = async (req, res) => {
   } catch (err) {
     res.status(500).json({
       message: "Error deleting notification",
-      err
+      error: err.message
     })
   }
 }

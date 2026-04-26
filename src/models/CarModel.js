@@ -32,32 +32,7 @@ const carSchema = new Schema({
         required: true,
         min: 0
     },
-    mileage: {
-        type: Number,
-        min: 0
-    },
-    fuelType: {
-        type: String,
-        enum: ["Petrol", "Diesel", "Electric", "Hybrid", "CNG", "LPG", "Other"]
-    },
-    transmission: {
-        type: String,
-        enum: ["Manual", "Automatic", "Semi-Automatic", "CVT", "Other"]
-    },
-    condition: {
-        type: String,
-        enum: ["New", "Used", "Certified Pre-Owned", "Salvage", "Other"],
-        default: "Used"
-    },
-    color: {
-        type: String,
-        trim: true
-    },
-    bodyType: {
-        type: String,
-        trim: true
-    },
-    location: {
+    image: {
         type: String,
         trim: true
     },
@@ -65,11 +40,6 @@ const carSchema = new Schema({
         type: String,
         trim: true
     },
-    image: {
-        type: String,
-        trim: true
-    },
-    features: [String],
     isAvailable: {
         type: Boolean,
         default: true
