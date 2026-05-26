@@ -1,31 +1,28 @@
-const multer = require("multer");
-const os = require("os");
-const path = require("path");
+const multer = require("multer")
+const fs = require("fs")
+const path = require("path")
+
+const uploadDir = path.join(process.cwd(), "uploads")
+
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true })
+}
 
 const storage = multer.diskStorage({
-    destination: os.tmpdir(),
-    filename: (req, file, cb) => {
-        const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-        const safeName = path.basename(file.originalname).replace(/\s+/g, "_");
-        cb(null, `${uniqueSuffix}-${safeName}`);
+    destination: uploadDir,
+    filename:(req,file,cb)=>{
+        const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`
+        const extension = path.extname(file.originalname || "").toLowerCase()
+        const baseName = path.basename(file.originalname || "image", extension)
+        const safeBaseName = baseName
+            .replace(/[^a-zA-Z0-9_-]/g, "_")
+            .replace(/_+/g, "_")
+            .replace(/^_+|_+$/g, "") || "image"
+
+        cb(null, `${uniqueSuffix}-${safeBaseName}${extension}`)
     }
-});
-
-const fileFilter = (req, file, cb) => {
-    if (file.mimetype && file.mimetype.startsWith("image/")) {
-        cb(null, true);
-        return;
-    }
-
-    cb(new Error("Only image uploads are allowed"));
-};
-
+})
 const upload = multer({
-    storage,
-    limits: {
-        fileSize: 5 * 1024 * 1024
-    },
-    fileFilter
-});
-
-module.exports = upload;
+    storage:storage,
+})
+module.exports = upload

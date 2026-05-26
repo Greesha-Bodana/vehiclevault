@@ -1,26 +1,46 @@
-const jwt = require("jsonwebtoken");
+const jwt = require("jsonwebtoken")
+const secret = process.env.JWT_SECRET
 
-const auth = (req, res, next) => {
-  const header = req.headers.authorization;
+const validateToken = async(req,res,next)=>{
 
-  if (!header || !header.startsWith("Bearer ")) {
-    return res.status(401).json({ message: "Authorization token is required" });
-  }
+    try{
 
-  const token = header.split(" ")[1];
+        const token = req.headers.authorization
+        console.log(token)
+        if(token){
+            //token Bearer
+            if(token.startsWith("Bearer ")){
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = {
-      ...decoded,
-      id: decoded.id || decoded._id?.toString(),
-      _id: decoded._id?.toString?.() || decoded._id,
-      role: decoded.role || "user"
-    };
-    next();
-  } catch (err) {
-    res.status(401).json({ message: "Invalid token" });
-  }
-};
+                //remove Bearer from token
 
-module.exports = auth;
+                const tokenValue = token.split(" ")[1]
+                //verifytoken using jwt
+                const decodedData = jwt.verify(tokenValue,secret)
+                console.log("decoded user..",decodedData)
+                req.user = decodedData
+                next()
+
+            }else{
+                res.status(401).json({
+                    message:"token is not Bearer token"
+                })
+            }
+
+        }
+        else{
+            res.status(401).json({
+                message:"token is not present.."
+            })
+        }
+        
+
+
+    }catch(err){
+        console.log(err)
+        res.status(500).json({
+            message:"error while validating token",
+            err:err
+        })
+    }
+}
+module.exports = validateToken

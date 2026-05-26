@@ -1,12 +1,13 @@
 const router = require("express").Router()
 const carController = require("../controllers/CarController")
-const auth = require("../middleware/AuthMiddleware")
+const validateToken = require("../middleware/AuthMiddleware")
 const upload = require("../middleware/UploadMiddleware")
 
-router.post("/", auth, upload.single("image"), carController.addCar)
-router.get("/", carController.getCars)
-router.get("/:id", carController.getCarById)
-router.put("/:id", auth, upload.single("image"), carController.updateCar)
-router.delete("/:id", auth, carController.deleteCar)
+router.get("/", validateToken, carController.getCars)
+router.get("/myCars", validateToken, carController.getMyCars)
+router.get("/:id", validateToken, carController.getCarById)
+router.post("/", upload.single("image"), carController.addCar)
+router.put("/:id", validateToken, upload.single("image"), carController.updateCar)
+router.delete("/:id", validateToken, carController.deleteCar)
 
 module.exports = router

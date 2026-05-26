@@ -3,7 +3,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const mailSend = require("../utils/MailUtil");
 
-const JWT_SECRET = process.env.JWT_SECRET || "secret";
+const JWT_SECRET = process.env.JWT_SECRET;
 const RESET_LINK_BASE = process.env.FRONTEND_URL || "http://localhost:5173";
 
 const sanitizeUser = (user) => {
